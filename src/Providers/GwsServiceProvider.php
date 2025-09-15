@@ -42,8 +42,8 @@ class GwsServiceProvider extends ServiceProvider
     {
         // Merge config
         $this->mergeConfigFrom(
-            __DIR__ . '/../../config/gws.php',
-            'gws'
+            __DIR__ . '/../../config/google-workspace.php',
+            'google-workspace'
         );
     }
 }
