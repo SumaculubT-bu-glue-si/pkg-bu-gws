@@ -209,10 +209,15 @@ class GoogleWorkspaceService
                 'environment' => app()->environment(),
             ];
 
+            $errorDetails['exception_message'] = $e->getMessage();
+            $errorDetails['exception_trace'] = $e->getTraceAsString();
+            if (method_exists($e, 'getErrors')) {
+                $errorDetails['google_errors'] = $e->getErrors();
+            }
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
 
-            throw new Exception('Failed to list users from Google Workspace');
+            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), 0, $e);
         }
     }
 
