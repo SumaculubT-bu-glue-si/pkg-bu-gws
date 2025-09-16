@@ -29,23 +29,23 @@ A Laravel package for integrating Google Workspace user and org unit sync, with 
 
 1. **Require the package via Composer:**
    ```bash
-  {
-    "minimum-stability": "dev",
-    "repositories": [
-      {
-        "type": "vcs",
-        "url": "https://github.com/izuminaoki2025/pkg-bu-gws.git"
+    {
+      "minimum-stability": "dev",
+      "repositories": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/izuminaoki2025/pkg-bu-gws.git"
+        }
+      ],
+      "require": {
+        "bu/gws": "dev-main"
       }
-    ],
-    "require": {
-      "bu/gws": "dev-main"
     }
-  }
    ```
 
 2. **Install required package**
    ```bash
-   composer require google/apiclient
+    composer require google/apiclient
    ```
 
 3. **Publish config:**
