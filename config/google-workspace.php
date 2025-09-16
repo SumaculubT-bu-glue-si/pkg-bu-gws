@@ -1,14 +1,15 @@
 <?php
 
 return [
-    // Credentials should always be stored in the host app, never in this package.
-    // Set GOOGLE_WORKSPACE_CREDENTIALS_PATH in your host app's .env to the correct location, e.g.:
+    // Credentials must be set in the host Laravel app's .env or config/services.php.
+    // Do NOT store any credential paths or keys in this package.
+    // Example for host app .env:
     // GOOGLE_WORKSPACE_CREDENTIALS_PATH=storage/app/your-key.json
+    // GOOGLE_WORKSPACE_ADMIN_EMAIL=admin@yourdomain.com
     'credentials' => [
-        'path' => config('services.google.credentials_path') ??
-            env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
-        'admin_email' => config('services.google.admin_email') ??
-            env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
+        // Always proxy to host app config/env only
+        'path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
+        'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
     ],
 
     'cache' => [

@@ -71,17 +71,13 @@ class GoogleWorkspaceService
         $client = new Client();
 
         try {
-            // Get credentials path from environment with fallback
-            $credentialsPath = config('services.google.credentials_path') ??
-                env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+            // Get credentials path and admin email from host app's environment only
+            $credentialsPath = env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+            $adminEmail = env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
 
             if (empty($credentialsPath)) {
                 throw new \Exception('Google Workspace credentials path not configured');
             }
-
-            $adminEmail = config('services.google.admin_email') ??
-                env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
-
             if (empty($adminEmail)) {
                 throw new \Exception('Google Workspace admin email not configured');
             }
@@ -123,21 +119,6 @@ class GoogleWorkspaceService
                     'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
                 ])
             );
-
-            try {
-                // Always use host app's config and env
-                $credentialsPath = config('google-workspace.credentials.path') ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
-                $adminEmail = config('google-workspace.credentials.admin_email') ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
-
-                if (empty($credentialsPath)) {
-                    throw new \Exception('Google Workspace credentials path not configured');
-                }
-                if (empty($adminEmail)) {
-                    throw new \Exception('Google Workspace admin email not configured');
-                }
-
-                // Log configuration in debug mode
-                if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
                     \Log::debug('Google Workspace Configuration', [
                         'credentials_configured' => !empty($credentialsPath),
                         'admin_email_configured' => !empty($adminEmail),
