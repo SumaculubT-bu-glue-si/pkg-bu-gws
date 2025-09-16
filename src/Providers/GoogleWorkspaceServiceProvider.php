@@ -1,6 +1,6 @@
 <?php
 
-namespace Bu\Gws\Providers;
+namespace App\Providers;
 
 use Bu\Gws\Services\GoogleWorkspaceService;
 use Illuminate\Support\ServiceProvider;

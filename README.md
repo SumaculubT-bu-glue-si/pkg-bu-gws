@@ -29,22 +29,43 @@ A Laravel package for integrating Google Workspace user and org unit sync, with 
 
 1. **Require the package via Composer:**
    ```bash
-   composer require bu/gws
+  {
+    "minimum-stability": "dev",
+    "repositories": [
+      {
+        "type": "vcs",
+        "url": "https://github.com/izuminaoki2025/pkg-bu-gws.git"
+      }
+    ],
+    "require": {
+      "bu/gws": "dev-main"
+    }
+  }
    ```
 
-2. **Publish config (optional):**
+2. **Install required package**
    ```bash
-   php artisan vendor:publish --provider="Bu\Gws\Providers\GwsServiceProvider"
+   composer require google/apiclient
    ```
 
-3. **Add credentials to your host app’s `.env`:**
-   ```
-   GOOGLE_WORKSPACE_CREDENTIALS_PATH=app/google-workspace-key.json
-   GOOGLE_WORKSPACE_ADMIN_EMAIL=admin@yourdomain.com
-   GOOGLE_WORKSPACE_DEBUG_LOGGING=true
+3. **Publish config:**
+   ```bash
+    php artisan vendor:publish --provider="Bu\Gws\Providers\GwsServiceProvider"
+
+      or
+
+    cp -f vendor/bu/gws/routes/api.php routes/api.php
+    cp -f vendor/bu/gws/graphql/schema.graphql graphql/schema.graphql
+    cp -f vendor/bu/gws/src/Providers/GoogleWorkspaceServiceProvider.php app/Providers/GoogleWorkspaceServiceProvider.php
+    cp -f vendor/bu/gws/AppServiceProvider.php app/Providers/AppServiceProvider.php
    ```
 
-4. **Place your Google service account JSON key in `storage/app/google-workspace-key.json` (or your chosen path).**
+4. **Add credentials to your host app’s `.env`:**
+   ```
+   Ask the Be Unique IT Engineers for this credentials
+   ```
+
+5. **Place your Google service account JSON key in `storage/app/google-workspace-key.json` (or your chosen path).**
 
 ---
 
@@ -58,12 +79,6 @@ Run from your host Laravel project root:
 php artisan gws:sync-users yourdomain.com --all
 ```
 
-**Options:**
-- `--all` : Sync all users
-- `--emails=alice@yourdomain.com,bob@yourdomain.com` : Sync specific users
-- `--since=2025-01-01T00:00:00Z` : Sync users modified since date
-- `--dry-run` : Preview changes without syncing
-
 ### 2. Webhook Endpoint
 
 Google Workspace can POST events to:
@@ -71,12 +86,6 @@ Google Workspace can POST events to:
 POST /api/gws/webhook
 ```
 Configure this endpoint in your Google Workspace admin console.
-
-### 3. API Routes
-
-See [`routes/api.php`](routes/api.php) for available REST endpoints for locations, assets, employees, audits, and corrective actions.
-
----
 
 ## Troubleshooting
 

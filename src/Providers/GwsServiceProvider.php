@@ -14,7 +14,11 @@ class GwsServiceProvider extends ServiceProvider
         // Publish config
         $this->publishes([
             __DIR__ . '/../../config/google-workspace.php' => config_path('google-workspace.php'),
-        ], 'config');
+            __DIR__ . '/../../routes/api.php' => base_path('routes/api.php'),
+            __DIR__ . '/../../graphql/schema.graphql' => base_path('graphql/schema.graphql'),
+            __DIR__ . '/GoogleWorkspaceServiceProvider.php' => app_path('Providers/GoogleWorkspaceServiceProvider.php'),
+            __DIR__ . '/../../AppServiceProvider.php' => app_path('Providers/AppServiceProvider.php'),
+        ], 'gws-all');
 
         // Publish migrations
         if (is_dir(__DIR__ . '/../../database/migrations')) {
