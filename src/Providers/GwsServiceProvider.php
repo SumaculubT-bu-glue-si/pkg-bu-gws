@@ -33,6 +33,16 @@ class GwsServiceProvider extends ServiceProvider
         if (is_dir(__DIR__ . '/../../graphql')) {
             // You may need to instruct the host app to import these in their main schema
         }
+
+        // Register package Artisan commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                // Add each command class here
+                \Bu\Gws\Console\Commands\SendCorrectiveActionReminders::class,
+                // Add other commands as needed, e.g.:
+                // \Bu\Gws\Console\Commands\GwsSyncUserCommand::class,
+            ]);
+        }
     }
 
     /**
