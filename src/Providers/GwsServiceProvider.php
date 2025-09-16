@@ -37,10 +37,7 @@ class GwsServiceProvider extends ServiceProvider
         // Register package Artisan commands
         if ($this->app->runningInConsole()) {
             $this->commands([
-                // Add each command class here
-                \Bu\Gws\Console\Commands\SendCorrectiveActionReminders::class,
-                // Add other commands as needed, e.g.:
-                // \Bu\Gws\Console\Commands\GwsSyncUserCommand::class,
+                \Bu\Gws\Console\Commands\SyncGoogleWorkspaceUsers::class,
             ]);
         }
     }
