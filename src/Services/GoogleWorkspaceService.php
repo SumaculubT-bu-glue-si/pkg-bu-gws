@@ -27,6 +27,31 @@ class GoogleWorkspaceService
         $this->monitor = $monitor;
     }
     /**
+     * List users in the domain with pagination and filtering
+     *
+     * @param string $domain
+     * @param array $options
+     * @return array
+     */
+    public function listUsers(string $domain, array $options = [])
+    {
+        $optParams = array_merge([
+            'domain' => $domain,
+            'projection' => 'full',
+            'orderBy' => 'email',
+            'maxResults' => 100,
+        ], $options);
+
+        $results = $this->directory->users->listUsers($optParams);
+
+        return [
+            'users' => $results->getUsers(),
+            'nextPageToken' => $results->nextPageToken ?? null,
+            'totalItems' => count($results->getUsers()),
+        ];
+    }
+
+    /**
      * Create a new Google Directory Service
      *
      * @return \Google\Service\Directory
