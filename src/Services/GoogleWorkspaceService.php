@@ -26,6 +26,15 @@ class GoogleWorkspaceService
         $this->cache = $cache;
         $this->monitor = $monitor;
     }
+    /**
+     * Create a new Google Directory Service
+     *
+     * @return \Google\Service\Directory
+     */
+    protected function createDirectoryService(): \Google\Service\Directory
+    {
+        return new \Google\Service\Directory($this->client);
+    }
 
     /**
      * Create a new Google Client
@@ -90,75 +99,75 @@ class GoogleWorkspaceService
                 ])
             );
 
-                try {
-                    // Always use host app's config and env
-                    $credentialsPath = config('google-workspace.credentials.path') ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
-                    $adminEmail = config('google-workspace.credentials.admin_email') ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
+            try {
+                // Always use host app's config and env
+                $credentialsPath = config('google-workspace.credentials.path') ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+                $adminEmail = config('google-workspace.credentials.admin_email') ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
 
-                    if (empty($credentialsPath)) {
-                        throw new \Exception('Google Workspace credentials path not configured');
-                    }
-                    if (empty($adminEmail)) {
-                        throw new \Exception('Google Workspace admin email not configured');
-                    }
+                if (empty($credentialsPath)) {
+                    throw new \Exception('Google Workspace credentials path not configured');
+                }
+                if (empty($adminEmail)) {
+                    throw new \Exception('Google Workspace admin email not configured');
+                }
 
-                    // Log configuration in debug mode
-                    if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
-                        \Log::debug('Google Workspace Configuration', [
-                            'credentials_configured' => !empty($credentialsPath),
-                            'admin_email_configured' => !empty($adminEmail),
-                            'environment' => app()->environment(),
-                        ]);
-                    }
-
-                    // Verify credential file exists and is readable
-                    if (!file_exists(storage_path($credentialsPath))) {
-                        throw new \Exception("Credentials file not found");
-                    }
-                    if (!is_readable(storage_path($credentialsPath))) {
-                        throw new \Exception("Credentials file is not readable");
-                    }
-
-                    $credentialContent = json_decode(file_get_contents(storage_path($credentialsPath)), true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        throw new \Exception("Invalid JSON in credentials file: " . json_last_error_msg());
-                    }
-                    if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
-                        throw new \Exception("Credentials file missing required fields");
-                    }
-
-                    $client->setHttpClient(
-                        new \GuzzleHttp\Client([
-                            'verify' => false,
-                            'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
-                        ])
-                    );
-
-                    // Log authentication info in debug mode
-                    if (env('APP_DEBUG', true) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', true)) {
-                        \Log::info('Google Workspace authentication initiated', [
-                            'service_account_configured' => !empty($credentialContent['client_email']),
-                            'admin_impersonation_configured' => !empty($adminEmail),
-                            'scopes_count' => 1,
-                            'environment' => app()->environment(),
-                        ]);
-                    }
-
-                    $client->setAuthConfig(storage_path($credentialsPath));
-                    $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
-                    $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/calendar']);
-                    $client->setSubject($adminEmail);
-
-                    return $client;
-                } catch (Exception $e) {
-                    \Log::error('Google Workspace Client initialization failed', [
-                        'error_type' => get_class($e),
-                        'has_credentials_path' => !empty($credentialsPath),
-                        'has_admin_email' => !empty($adminEmail),
+                // Log configuration in debug mode
+                if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+                    \Log::debug('Google Workspace Configuration', [
+                        'credentials_configured' => !empty($credentialsPath),
+                        'admin_email_configured' => !empty($adminEmail),
                         'environment' => app()->environment(),
                     ]);
-                    throw $e;
                 }
+
+                // Verify credential file exists and is readable
+                if (!file_exists(storage_path($credentialsPath))) {
+                    throw new \Exception("Credentials file not found");
+                }
+                if (!is_readable(storage_path($credentialsPath))) {
+                    throw new \Exception("Credentials file is not readable");
+                }
+
+                $credentialContent = json_decode(file_get_contents(storage_path($credentialsPath)), true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new \Exception("Invalid JSON in credentials file: " . json_last_error_msg());
+                }
+                if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
+                    throw new \Exception("Credentials file missing required fields");
+                }
+
+                $client->setHttpClient(
+                    new \GuzzleHttp\Client([
+                        'verify' => false,
+                        'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
+                    ])
+                );
+
+                // Log authentication info in debug mode
+                if (env('APP_DEBUG', true) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', true)) {
+                    \Log::info('Google Workspace authentication initiated', [
+                        'service_account_configured' => !empty($credentialContent['client_email']),
+                        'admin_impersonation_configured' => !empty($adminEmail),
+                        'scopes_count' => 1,
+                        'environment' => app()->environment(),
+                    ]);
+                }
+
+                $client->setAuthConfig(storage_path($credentialsPath));
+                $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
+                $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/calendar']);
+                $client->setSubject($adminEmail);
+
+                return $client;
+            } catch (Exception $e) {
+                \Log::error('Google Workspace Client initialization failed', [
+                    'error_type' => get_class($e),
+                    'has_credentials_path' => !empty($credentialsPath),
+                    'has_admin_email' => !empty($adminEmail),
+                    'environment' => app()->environment(),
+                ]);
+                throw $e;
+            }
             $startTime = microtime(true);
 
             try {
