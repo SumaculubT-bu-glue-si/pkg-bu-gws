@@ -202,81 +202,81 @@ class GoogleWorkspaceService
         } catch (Exception $e) {
             // Enhanced error logging without sensitive data
             $errorDetails = [
-                'operation' => 'listUsers',
-                'has_domain' => !empty($domain),
-                'options_provided' => !empty($options),
-                'error_type' => get_class($e),
-                'environment' => app()->environment(),
-            ];
+                try {
+                    // Get credentials path and admin email from host app's environment only
+                    $credentialsPath = env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+                    $adminEmail = env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
 
-            \Log::error('Google Workspace operation failed', $errorDetails);
-            $this->monitor?->logError('listUsers', $e, $errorDetails);
+                    if (empty($credentialsPath)) {
+                        throw new \Exception('Google Workspace credentials path not configured');
+                    }
+                    if (empty($adminEmail)) {
+                        throw new \Exception('Google Workspace admin email not configured');
+                    }
 
-            throw new Exception('Failed to list users from Google Workspace');
-        }
-    }
+                    // Only log configuration in debug mode and hide sensitive info
+                    if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+                        \Log::debug('Google Workspace Configuration', [
+                            'credentials_configured' => !empty($credentialsPath),
+                            'admin_email_configured' => !empty($adminEmail),
+                            'environment' => app()->environment(),
+                        ]);
+                    }
 
-    /**
-     * Search users by query with specific criteria
-     *
-     * @param string $domain Domain name
-     * @param string $query Search query
-     * @param array $options Additional options
-     * @return array
-     */
-    public function searchUsers(string $domain, string $query, array $options = [])
-    {
-        try {
-            $optParams = array_merge([
-                'domain' => $domain,
-                'projection' => 'full',
-                'query' => $query,
-                'orderBy' => 'email',
-                'maxResults' => 100,
-            ], $options);
+                    // Verify credential file exists
+                    if (!file_exists(storage_path($credentialsPath))) {
+                        throw new \Exception("Credentials file not found");
+                    }
 
-            $results = $this->directory->users->listUsers($optParams);
-            return [
-                'users' => $results->getUsers(),
-                'nextPageToken' => $results->nextPageToken,
-                'totalItems' => count($results->getUsers())
-            ];
-        } catch (Exception $e) {
-            throw new Exception('Failed to search users in Google Workspace');
-        }
-    }
+                    // Verify credential file is readable
+                    if (!is_readable(storage_path($credentialsPath))) {
+                        throw new \Exception("Credentials file is not readable");
+                    }
 
-    /**
-     * List users in specific organizational unit
-     *
-     * @param string $domain Domain name
-     * @param string $orgUnitPath Organizational unit path
-     * @param array $options Additional options
-     * @return array
-     */
-    public function listUsersByOrgUnit(string $domain, string $orgUnitPath, array $options = [])
-    {
-        try {
-            $optParams = array_merge([
-                'domain' => $domain,
-                'projection' => 'full',
-                'orderBy' => 'email',
-                'maxResults' => 100,
-                'query' => "orgUnitPath='{$orgUnitPath}'", // Use query instead of orgUnitPath
-            ], $options);
+                    // Verify credential file content
+                    $credentialContent = json_decode(file_get_contents(storage_path($credentialsPath)), true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        throw new \Exception("Invalid JSON in credentials file: " . json_last_error_msg());
+                    }
 
-            $results = $this->directory->users->listUsers($optParams);
-            return [
-                'users' => $results->getUsers(),
-                'nextPageToken' => $results->nextPageToken,
-                'totalItems' => count($results->getUsers())
-            ];
-        } catch (Exception $e) {
-            throw new Exception('Failed to list users in organizational unit');
-        }
-    }
+                    // Verify required fields in credentials
+                    if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
+                        throw new \Exception("Credentials file missing required fields");
+                    }
 
-    /**
+                    // Set up HTTP client with SSL verification options
+                    $client->setHttpClient(
+                        new \GuzzleHttp\Client([
+                            'verify' => false,
+                            'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
+                        ])
+                    );
+
+                    // Log authentication info in debug mode
+                    if (env('APP_DEBUG', true) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', true)) {
+                        \Log::info('Google Workspace authentication initiated', [
+                            'service_account_configured' => !empty($credentialContent['client_email']),
+                            'admin_impersonation_configured' => !empty($adminEmail),
+                            'scopes_count' => 1,
+                            'environment' => app()->environment(),
+                        ]);
+                    }
+
+                    $client->setAuthConfig(storage_path($credentialsPath));
+                    $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
+                    $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/calendar']);
+                    $client->setSubject($adminEmail);
+
+                    return $client;
+                } catch (Exception $e) {
+                    \Log::error('Google Workspace Client initialization failed', [
+                        'error_type' => get_class($e),
+                        'has_credentials_path' => !empty($credentialsPath),
+                        'has_admin_email' => !empty($adminEmail),
+                        'environment' => app()->environment(),
+                    ]);
+                    throw $e;
+                }
      * List recently modified users
      *
      * @param string $domain Domain name
