@@ -115,8 +115,9 @@ class GoogleWorkspaceService
                 'has_credentials_path' => !empty($credentialsPath),
                 'has_admin_email' => !empty($adminEmail),
                 'environment' => app()->environment(),
+                'exception_message' => $e->getMessage(),
             ]);
-            throw new Exception('Failed to initialize Google Workspace Client');
+            throw new Exception('Failed to initialize Google Workspace Client: ' . $e->getMessage());
         }
     }
 
