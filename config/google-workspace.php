@@ -5,8 +5,10 @@ return [
     // Set GOOGLE_WORKSPACE_CREDENTIALS_PATH in your host app's .env to the correct location, e.g.:
     // GOOGLE_WORKSPACE_CREDENTIALS_PATH=storage/app/your-key.json
     'credentials' => [
-        'path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
-        'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
+        'path' => config('services.google.credentials_path') ??
+            env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
+        'admin_email' => config('services.google.admin_email') ??
+            env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
     ],
 
     'cache' => [
