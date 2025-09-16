@@ -1,9 +1,12 @@
 <?php
 
 return [
+    // Credentials should always be stored in the host app, never in this package.
+    // Set GOOGLE_WORKSPACE_CREDENTIALS_PATH in your host app's .env to the correct location, e.g.:
+    // GOOGLE_WORKSPACE_CREDENTIALS_PATH=storage/app/your-key.json
     'credentials' => [
-        'path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH', 'app/bu-project-470908-62e94ff11fdb.json'),
-        'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL', 'izumi@capo.co.jp'),
+        'path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
+        'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
     ],
 
     'cache' => [
