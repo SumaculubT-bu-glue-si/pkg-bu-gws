@@ -27,45 +27,50 @@ A Laravel package for integrating Google Workspace user and org unit sync, with 
 
 ## Installation
 
-1. **Require the package via Composer:**
-   ```bash
-    {
-      "minimum-stability": "dev",
-      "repositories": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/izuminaoki2025/pkg-bu-gws.git"
-        }
-      ],
-      "require": {
-        "bu/gws": "dev-main"
+1. **Add credentials to your `.env` (contact the Be Unique IT Engineer for these credentials):**
+```bash
+  # Google Workspace Configuration
+  GOOGLE_WORKSPACE_CREDENTIALS_PATH=app/aims-(google_work_space_key).json
+  GOOGLE_WORKSPACE_ADMIN_EMAIL=admin@bu.glue-si.com(admin_email)
+  GOOGLE_WORKSPACE_DOMAIN=bu.glue-si.com(sample_subdomain)
+  GOOGLE_WORKSPACE_SYNC_BATCH_SIZE=100(batch_size)
+  GOOGLE_WORKSPACE_SYNC_DELAY=1(delay_in_seconds)
+
+  # Google Workspace Security Settings
+  GOOGLE_WORKSPACE_DEBUG_LOGGING=true (debug_logging)
+  GOOGLE_WORKSPACE_TIMEOUT=60 (timeout_in_seconds)
+  GOOGLE_WORKSPACE_APP_NAME="AssetWise"(app_name)
+  GOOGLE_WORKSPACE_SSL_VERIFY= (ssl_verify)
+  GOOGLE_WORKSPACE_WEBHOOK_SECRET=aims-dev-webhook-2025(webhook_secret)
+```
+
+2. **Place your Google service account JSON key in `storage/app/google-workspace-key.json` (or your chosen path).**
+
+3. **Require the package via Composer:**
+```bash
+  {
+    "minimum-stability": "dev",
+    "repositories": [
+      {
+        "type": "vcs",
+        "url": "https://github.com/izuminaoki2025/pkg-bu-gws.git"
       }
+    ],
+    "require": {
+      "bu/gws": "dev-main"
     }
-   ```
+  }
+```
 
-2. **Install required package**
-   ```bash
-    composer require google/apiclient
-   ```
+4. **Install required package**
+```bash
+  composer require google/apiclient
+```
 
-3. **Publish config:**
-   ```bash
-    php artisan vendor:publish --provider="Bu\Gws\Providers\GwsServiceProvider"
-
-      or
-
-    cp -f vendor/bu/gws/routes/api.php routes/api.php
-    cp -f vendor/bu/gws/graphql/schema.graphql graphql/schema.graphql
-    cp -f vendor/bu/gws/src/Providers/GoogleWorkspaceServiceProvider.php app/Providers/GoogleWorkspaceServiceProvider.php
-    cp -f vendor/bu/gws/AppServiceProvider.php app/Providers/AppServiceProvider.php
-   ```
-
-4. **Add credentials to your host app’s `.env`:**
-   ```
-   Ask the Be Unique IT Engineers for this credentials
-   ```
-
-5. **Place your Google service account JSON key in `storage/app/google-workspace-key.json` (or your chosen path).**
+5. **Publish necessary files:**
+```bash
+  php artisan vendor:publish --provider="Bu\Gws\Providers\GwsServiceProvider" --force
+```
 
 ---
 
@@ -73,19 +78,18 @@ A Laravel package for integrating Google Workspace user and org unit sync, with 
 
 ### 1. Sync Users via Artisan Command
 
-Run from your host Laravel project root:
+Run from your host Laravel project root to sync all the users of this subdomain to database `employees` table:
 
 ```bash
-php artisan gws:sync-users yourdomain.com --all
+  php artisan gws:sync-users bu.glue-si.com --all
 ```
 
 ### 2. Webhook Endpoint
 
-Google Workspace can POST events to:
+Run Google Workspace end point to update the GWS for all operations from user insterface:
+```bash
+  php artisan queue:work --daemon
 ```
-POST /api/gws/webhook
-```
-Configure this endpoint in your Google Workspace admin console.
 
 ## Troubleshooting
 
