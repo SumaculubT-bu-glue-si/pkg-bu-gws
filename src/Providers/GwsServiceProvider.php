@@ -18,7 +18,7 @@ class GwsServiceProvider extends ServiceProvider
             __DIR__ . '/../../routes/api.php' => base_path('routes/api.php'),
             __DIR__ . '/../../graphql/schema.graphql' => base_path('graphql/schema.graphql'),
             __DIR__ . '/GoogleWorkspaceServiceProvider.php' => app_path('Providers/GoogleWorkspaceServiceProvider.php'),
-            __DIR__ . '/../../AppServiceProvider.php' => app_path('Providers/AppServiceProvider.php'),
+            __DIR__ . '/AppServiceProvider.php' => app_path('Providers/AppServiceProvider.php'),
         ], 'gws-all');
 
         // Publish migrations
