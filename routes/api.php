@@ -69,4 +69,4 @@ Route::prefix('employee-audits')->group(function () {
 });
 
 // Google Workspace webhook endpoint
-Route::post('/gws/webhook', [App\Http\Controllers\GoogleWorkspaceWebhookController::class, 'handle']);
+Route::post('/gws/webhook', [Bu\Gws\Http\Controllers\GoogleWorkspaceWebhookController::class, 'handle']);
