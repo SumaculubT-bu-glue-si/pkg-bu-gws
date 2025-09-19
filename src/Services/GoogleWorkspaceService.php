@@ -43,14 +43,6 @@ class GoogleWorkspaceService
             return $this->directory;
         }
 
-        protected function createDirectoryService(): Directory
-        {
-            try {
-                return new Directory($this->getClient());
-            } catch (Exception $e) {
-                throw new Exception('Failed to initialize Directory Service');
-            }
-        }
     /**
      * Create a new Google Client
      * 
