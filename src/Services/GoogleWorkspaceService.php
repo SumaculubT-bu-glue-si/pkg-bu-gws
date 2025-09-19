@@ -21,11 +21,11 @@ class GoogleWorkspaceService
         GoogleWorkspaceCache $cache = null,
         GoogleWorkspaceMonitor $monitor = null
     ) {
+        $this->client = $client;
+        $this->directory = $directory;
         $this->cache = $cache;
         $this->monitor = $monitor;
     }
-            $this->client = $client;
-            $this->directory = $directory;
 
         protected function getClient(): Client
         {
