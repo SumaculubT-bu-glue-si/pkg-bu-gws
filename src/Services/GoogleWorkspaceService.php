@@ -465,9 +465,12 @@ class GoogleWorkspaceService
         } catch (Exception $e) {
             $this->monitor?->logError('updateUser', $e, [
                 'operation' => 'updateUser',
-                'changes_count' => count($userData)
+                'changes_count' => count($userData),
+                'exception_message' => $e->getMessage(),
+                'exception_code' => $e->getCode(),
+                'exception_trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception('Failed to update user in Google Workspace');
+            throw new Exception('Failed to update user in Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
