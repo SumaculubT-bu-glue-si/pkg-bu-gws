@@ -1,12 +1,12 @@
 <?php
 
-namespace Bu\Gws\Services;
+namespace Bu\GwsServices;
 
 use Google\Client;
 use Google\Service\Directory;
 use Exception;
-use Bu\Gws\Services\GoogleWorkspace\Cache\GoogleWorkspaceCache;
-use Bu\Gws\Services\GoogleWorkspace\Monitoring\GoogleWorkspaceMonitor;
+use Bu\GwsServices\GoogleWorkspace\Cache\GoogleWorkspaceCache;
+use Bu\GwsServices\GoogleWorkspace\Monitoring\GoogleWorkspaceMonitor;
 
 class GoogleWorkspaceService
 {
@@ -16,32 +16,16 @@ class GoogleWorkspaceService
     protected $monitor;
 
     public function __construct(
-        Client $client = null,
+        Client $client = null, 
         Directory $directory = null,
         GoogleWorkspaceCache $cache = null,
         GoogleWorkspaceMonitor $monitor = null
     ) {
-        $this->client = $client;
-        $this->directory = $directory;
+        $this->client = $client ?? $this->createClient();
+        $this->directory = $directory ?? $this->createDirectoryService();
         $this->cache = $cache;
         $this->monitor = $monitor;
     }
-
-        protected function getClient(): Client
-        {
-            if (!$this->client) {
-                $this->client = $this->createClient();
-            }
-            return $this->client;
-        }
-
-        protected function getDirectoryService(): Directory
-        {
-            if (!$this->directory) {
-                $this->directory = $this->createDirectoryService();
-            }
-            return $this->directory;
-        }
 
     /**
      * Create a new Google Client
@@ -54,14 +38,16 @@ class GoogleWorkspaceService
 
         try {
             // Get credentials path from environment with fallback
-            $credentialsPath = env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
-
+            $credentialsPath = config('services.google.credentials_path') ?? 
+                              env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+            
             if (empty($credentialsPath)) {
                 throw new \Exception('Google Workspace credentials path not configured');
             }
-
-            $adminEmail = env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
-
+            
+            $adminEmail = config('services.google.admin_email') ?? 
+                         env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
+                         
             if (empty($adminEmail)) {
                 throw new \Exception('Google Workspace admin email not configured');
             }
@@ -95,7 +81,7 @@ class GoogleWorkspaceService
             if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
                 throw new \Exception("Credentials file missing required fields");
             }
-
+            
             // Set up HTTP client with SSL verification options
             $client->setHttpClient(
                 new \GuzzleHttp\Client([
@@ -103,7 +89,7 @@ class GoogleWorkspaceService
                     'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
                 ])
             );
-
+            
             // Only log authentication info in debug mode with minimal data
             if (env('APP_DEBUG', true) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', true)) {
                 \Log::info('Google Workspace authentication initiated', [
@@ -116,11 +102,11 @@ class GoogleWorkspaceService
 
             // Set up authentication
             $client->setAuthConfig(storage_path($credentialsPath));
-
+            
             // Configure service account
             $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
-            $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user', 'https://www.googleapis.com/auth/calendar']);
-
+            $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user','https://www.googleapis.com/auth/calendar' ]);
+            
             // Set admin account to impersonate
             $client->setSubject($adminEmail);
 
@@ -132,9 +118,8 @@ class GoogleWorkspaceService
                 'has_credentials_path' => !empty($credentialsPath),
                 'has_admin_email' => !empty($adminEmail),
                 'environment' => app()->environment(),
-                'exception_message' => $e->getMessage(),
             ]);
-            throw new Exception('Failed to initialize Google Workspace Client: ' . $e->getMessage());
+            throw new Exception('Failed to initialize Google Workspace Client');
         }
     }
 
@@ -190,11 +175,10 @@ class GoogleWorkspaceService
 
             // Track API call start time
             $startTime = microtime(true);
-
+            
             try {
                 $results = $this->directory->users->listUsers($optParams);
-                    $results = $this->getDirectoryService()->users->listUsers($optParams);
-
+                
                 // Track successful API call
                 $this->monitor?->trackApiCall('listUsers', $startTime, $domain);
 
@@ -216,26 +200,19 @@ class GoogleWorkspaceService
                 throw $e;
             }
         } catch (Exception $e) {
-            // Enhanced error logging with full exception details
+            // Enhanced error logging without sensitive data
             $errorDetails = [
                 'operation' => 'listUsers',
                 'has_domain' => !empty($domain),
                 'options_provided' => !empty($options),
                 'error_type' => get_class($e),
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'error_trace' => $e->getTraceAsString(),
                 'environment' => app()->environment(),
             ];
-            // If Google API exception, try to log errors array
-            if (method_exists($e, 'getErrors')) {
-                $errorDetails['google_errors'] = $e->getErrors();
-            }
-
+            
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
-
-            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
+            
+            throw new Exception('Failed to list users from Google Workspace');
         }
     }
 
@@ -259,7 +236,6 @@ class GoogleWorkspaceService
             ], $options);
 
             $results = $this->directory->users->listUsers($optParams);
-                $results = $this->getDirectoryService()->users->listUsers($optParams);
             return [
                 'users' => $results->getUsers(),
                 'nextPageToken' => $results->nextPageToken,
@@ -290,7 +266,6 @@ class GoogleWorkspaceService
             ], $options);
 
             $results = $this->directory->users->listUsers($optParams);
-                $results = $this->getDirectoryService()->users->listUsers($optParams);
             return [
                 'users' => $results->getUsers(),
                 'nextPageToken' => $results->nextPageToken,
@@ -321,7 +296,6 @@ class GoogleWorkspaceService
             ], $options);
 
             $results = $this->directory->users->listUsers($optParams);
-                $results = $this->getDirectoryService()->users->listUsers($optParams);
             return [
                 'users' => $results->getUsers(),
                 'nextPageToken' => $results->nextPageToken,
@@ -346,7 +320,7 @@ class GoogleWorkspaceService
             if ($this->cache) {
                 $cachedUser = $this->cache->rememberUser($email, function () use ($email, $projection) {
                     $startTime = microtime(true);
-                    $user = $this->getDirectoryService()->users->get($email, ['projection' => $projection]);
+                    $user = $this->directory->users->get($email, ['projection' => $projection]);
                     $this->monitor?->trackApiCall('getUser', $startTime, $email);
                     return $user;
                 });
@@ -357,7 +331,6 @@ class GoogleWorkspaceService
             // If no cache, direct API call
             $startTime = microtime(true);
             $user = $this->directory->users->get($email, ['projection' => $projection]);
-                $user = $this->getDirectoryService()->users->get($email, ['projection' => $projection]);
             $this->monitor?->trackApiCall('getUser', $startTime, $email);
             return $user;
         } catch (Exception $e) {
@@ -417,45 +390,43 @@ class GoogleWorkspaceService
     {
         try {
             $startTime = microtime(true);
-
+            
             // Get existing user
             $user = $this->directory->users->get($userKey);
-                $user = $this->getDirectoryService()->users->get($userKey);
             $changes = [];
-
+            
             // Update user properties properly
             if (isset($userData['name'])) {
                 $user->setName(new Directory\UserName($userData['name']));
                 $changes['name'] = true; // Don't log actual name
             }
-
+            
             if (isset($userData['primaryEmail'])) {
                 $user->setPrimaryEmail($userData['primaryEmail']);
                 $changes['primaryEmail'] = true; // Don't log actual email
             }
-
+            
             if (isset($userData['orgUnitPath'])) {
                 $user->setOrgUnitPath($userData['orgUnitPath']);
                 $changes['orgUnitPath'] = $userData['orgUnitPath']; // OK to log org unit
             }
-
+            
             if (isset($userData['suspended'])) {
                 $user->setSuspended($userData['suspended']);
                 $changes['suspended'] = $userData['suspended']; // OK to log boolean
             }
 
             $updatedUser = $this->directory->users->update($userKey, $user);
-                $updatedUser = $this->getDirectoryService()->users->update($userKey, $user);
-
+            
             // Track API call
             $this->monitor?->trackApiCall('updateUser', $startTime, 'user_updated');
-
+            
             // Dispatch event
-            event(new \Bu\Gws\Events\GoogleWorkspace\UserUpdated($updatedUser, $changes, [
+            event(new \Bu\GwsEvents\GoogleWorkspace\UserUpdated($updatedUser, $changes, [
                 'source' => 'api',
                 'updater' => auth()->user()?->email ?? 'system'
             ]));
-
+            
             // Invalidate cache
             if ($this->cache) {
                 $this->cache->invalidateUser($userKey);
@@ -467,17 +438,14 @@ class GoogleWorkspaceService
                     $this->cache->invalidateDomain(explode('@', $userKey)[1]);
                 }
             }
-
+            
             return $updatedUser;
         } catch (Exception $e) {
             $this->monitor?->logError('updateUser', $e, [
                 'operation' => 'updateUser',
-                'changes_count' => count($userData),
-                'exception_message' => $e->getMessage(),
-                'exception_code' => $e->getCode(),
-                'exception_trace' => $e->getTraceAsString(),
+                'changes_count' => count($userData)
             ]);
-            throw new Exception('Failed to update user in Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new Exception('Failed to update user in Google Workspace');
         }
     }
 
@@ -491,7 +459,6 @@ class GoogleWorkspaceService
         try {
             // Try to list users (with a limit of 1) to verify configuration
             $this->directory->users->listUsers(['maxResults' => 1]);
-                $this->getDirectoryService()->users->listUsers(['maxResults' => 1]);
             return true;
         } catch (Exception $e) {
             return false;
@@ -508,7 +475,7 @@ class GoogleWorkspaceService
     {
         try {
             $startTime = microtime(true);
-
+            
             // Only log in debug mode without sensitive data
             if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
                 \Log::debug('Creating Google Workspace user', [
@@ -517,16 +484,16 @@ class GoogleWorkspaceService
                     'org_unit' => $userData['orgUnitPath'] ?? 'default',
                 ]);
             }
-
+            
             // Create user
             $user = new Directory\User($userData);
-                $createdUser = $this->getDirectoryService()->users->insert($user);
-
+            $createdUser = $this->directory->users->insert($user);
+            
             // Track API call
             $this->monitor?->trackApiCall('createUser', $startTime, 'user_created');
 
             // Dispatch event
-            event(new \Bu\Gws\Events\GoogleWorkspace\UserCreated($createdUser, [
+            event(new \Bu\GwsEvents\GoogleWorkspace\UserCreated($createdUser, [
                 'source' => 'api',
                 'creator' => auth()->user()?->email ?? 'system'
             ]));
@@ -579,19 +546,18 @@ class GoogleWorkspaceService
     {
         try {
             $startTime = microtime(true);
-
+            
             $this->directory->users->delete($userKey);
-                $this->getDirectoryService()->users->delete($userKey);
-
+            
             // Track API call
             $this->monitor?->trackApiCall('deleteUser', $startTime, 'user_deleted');
-
+            
             // Dispatch event
-            event(new \Bu\Gws\Events\GoogleWorkspace\UserDeleted($userKey, [
+            event(new \Bu\GwsEvents\GoogleWorkspace\UserDeleted($userKey, [
                 'source' => 'api',
                 'deleter' => auth()->user()?->email ?? 'system'
             ]));
-
+            
             // Invalidate cache
             if ($this->cache) {
                 $this->cache->invalidateUser($userKey);
@@ -599,6 +565,7 @@ class GoogleWorkspaceService
                     $this->cache->invalidateDomain(explode('@', $userKey)[1]);
                 }
             }
+            
         } catch (Exception $e) {
             $this->monitor?->logError('deleteUser', $e, ['operation' => 'deleteUser']);
             throw new Exception('Failed to delete user from Google Workspace');
@@ -616,7 +583,7 @@ class GoogleWorkspaceService
     {
         try {
             $userAlias = new Directory\Alias(['alias' => $alias]);
-                return $this->getDirectoryService()->users_aliases->insert($userKey, $userAlias);
+            return $this->directory->users_aliases->insert($userKey, $userAlias);
         } catch (Exception $e) {
             throw new Exception('Failed to add user alias in Google Workspace');
         }
@@ -633,7 +600,6 @@ class GoogleWorkspaceService
     {
         try {
             $this->directory->users_aliases->delete($userKey, $alias);
-                $this->getDirectoryService()->users_aliases->delete($userKey, $alias);
         } catch (Exception $e) {
             throw new Exception('Failed to remove user alias from Google Workspace');
         }
@@ -661,7 +627,7 @@ class GoogleWorkspaceService
     public function testCalendarConnection(): bool
     {
         try {
-            $calendar = new \Google\Service\Calendar($this->getClient());
+            $calendar = new \Google\Service\Calendar($this->client);
             $calendar->calendarList->listCalendarList(['maxResults' => 1]);
             return true;
         } catch (Exception $e) {
@@ -679,10 +645,10 @@ class GoogleWorkspaceService
     {
         try {
             $startTime = microtime(true);
-
+            
             // Create calendar service
-            $calendar = new \Google\Service\Calendar($this->getClient());
-
+            $calendar = new \Google\Service\Calendar($this->client);
+            
             // Set up event
             $event = new \Google\Service\Calendar\Event([
                 'summary' => $eventData['title'],
@@ -706,13 +672,13 @@ class GoogleWorkspaceService
                     ],
                 ],
             ]);
-
+            
             // Insert event
             $createdEvent = $calendar->events->insert($userEmail, $event);
-
+            
             // Track API call
             $this->monitor?->trackApiCall('createCalendarEvent', $startTime, 'event_created');
-
+            
             return $createdEvent;
         } catch (Exception $e) {
             $this->monitor?->logError('createCalendarEvent', $e, [
@@ -729,11 +695,11 @@ class GoogleWorkspaceService
     public function updateCalendarEvent(string $userEmail, string $eventId, array $eventData)
     {
         try {
-            $calendar = new \Google\Service\Calendar($this->getClient());
-
+            $calendar = new \Google\Service\Calendar($this->client);
+            
             // Get existing event
             $event = $calendar->events->get($userEmail, $eventId);
-
+            
             // Update event data
             $event->setSummary($eventData['title']);
             $event->setDescription($eventData['description']);
@@ -745,10 +711,10 @@ class GoogleWorkspaceService
                 'dateTime' => $eventData['end_datetime'],
                 'timeZone' => $eventData['timezone'] ?? 'Asia/Tokyo',
             ]));
-
+            
             // Update event
             $updatedEvent = $calendar->events->update($userEmail, $eventId, $event);
-
+            
             return $updatedEvent;
         } catch (Exception $e) {
             throw new Exception('Failed to update calendar event');
@@ -761,7 +727,7 @@ class GoogleWorkspaceService
     public function deleteCalendarEvent(string $userEmail, string $eventId)
     {
         try {
-            $calendar = new \Google\Service\Calendar($this->getClient());
+            $calendar = new \Google\Service\Calendar($this->client);
             $calendar->events->delete($userEmail, $eventId);
             return true;
         } catch (Exception $e) {
