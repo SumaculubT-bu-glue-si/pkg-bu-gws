@@ -225,12 +225,9 @@ class GoogleWorkspaceService
                 'error_type' => get_class($e),
                 'has_credentials_path' => !empty($credentialsPath),
                 'has_admin_email' => !empty($adminEmail),
-                'environment' => app()->environment(),
             ]);
             throw new Exception('Failed to initialize Google Workspace Client');
-        }
-                'environment' => app()->environment(),
-            ];
+                
             // If Google API exception, try to log errors array
             if (method_exists($e, 'getErrors')) {
                 $errorDetails['google_errors'] = $e->getErrors();
