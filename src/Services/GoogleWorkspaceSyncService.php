@@ -71,7 +71,10 @@ class GoogleWorkspaceSyncService
             return $this->getSyncStats();
         } catch (Exception $e) {
             Log::error('Google Workspace sync failed', [
-                'error' => $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'error_code' => $e->getCode(),
+                'error_trace' => $e->getTraceAsString(),
                 'domain' => $domain,
                 'stats' => $this->getSyncStats()
             ]);
@@ -157,7 +160,10 @@ class GoogleWorkspaceSyncService
         } catch (Exception $e) {
             $this->syncStats['errors']++;
             Log::error('Failed to sync user from GWS', [
-                'error' => $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'error_code' => $e->getCode(),
+                'error_trace' => $e->getTraceAsString(),
                 'user_email' => $gwsUser->getPrimaryEmail() ?? 'unknown'
             ]);
             return null;
@@ -181,6 +187,14 @@ class GoogleWorkspaceSyncService
                 $employee = $this->syncUser($user);
                 $results[$email] = $employee ? 'Success' : 'Failed';
             } catch (Exception $e) {
+                Log::error('Failed to sync user by email', [
+                    'error_message' => $e->getMessage(),
+                    'error_class' => get_class($e),
+                    'error_code' => $e->getCode(),
+                    'error_trace' => $e->getTraceAsString(),
+                    'user_email' => $email,
+                    'domain' => $domain
+                ]);
                 $results[$email] = 'Error: ' . $e->getMessage();
             }
         }
@@ -208,7 +222,10 @@ class GoogleWorkspaceSyncService
             return $this->getSyncStats();
         } catch (Exception $e) {
             Log::error('Failed to sync recently modified users', [
-                'error' => $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'error_code' => $e->getCode(),
+                'error_trace' => $e->getTraceAsString(),
                 'domain' => $domain,
                 'since' => $since
             ]);
