@@ -216,19 +216,26 @@ class GoogleWorkspaceService
                 throw $e;
             }
         } catch (Exception $e) {
-            // Enhanced error logging without sensitive data
+            // Enhanced error logging with full exception details
             $errorDetails = [
                 'operation' => 'listUsers',
                 'has_domain' => !empty($domain),
                 'options_provided' => !empty($options),
                 'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_trace' => $e->getTraceAsString(),
                 'environment' => app()->environment(),
             ];
+            // If Google API exception, try to log errors array
+            if (method_exists($e, 'getErrors')) {
+                $errorDetails['google_errors'] = $e->getErrors();
+            }
 
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
 
-            throw new Exception('Failed to list users from Google Workspace');
+            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
