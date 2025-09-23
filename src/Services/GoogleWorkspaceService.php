@@ -1,12 +1,12 @@
 <?php
 
-namespace Bu\GwsServices;
+namespace Bu\Gws\Services;
 
 use Google\Client;
 use Google\Service\Directory;
 use Exception;
-use Bu\GwsServices\GoogleWorkspace\Cache\GoogleWorkspaceCache;
-use Bu\GwsServices\GoogleWorkspace\Monitoring\GoogleWorkspaceMonitor;
+use Bu\Gws\Services\GoogleWorkspace\Cache\GoogleWorkspaceCache;
+use Bu\Gws\Services\GoogleWorkspace\Monitoring\GoogleWorkspaceMonitor;
 
 class GoogleWorkspaceService
 {
@@ -422,7 +422,7 @@ class GoogleWorkspaceService
             $this->monitor?->trackApiCall('updateUser', $startTime, 'user_updated');
             
             // Dispatch event
-            event(new \Bu\GwsEvents\GoogleWorkspace\UserUpdated($updatedUser, $changes, [
+            event(new \Bu\Gws\Events\GoogleWorkspace\UserUpdated($updatedUser, $changes, [
                 'source' => 'api',
                 'updater' => auth()->user()?->email ?? 'system'
             ]));
@@ -493,7 +493,7 @@ class GoogleWorkspaceService
             $this->monitor?->trackApiCall('createUser', $startTime, 'user_created');
 
             // Dispatch event
-            event(new \Bu\GwsEvents\GoogleWorkspace\UserCreated($createdUser, [
+            event(new \Bu\Gws\Events\GoogleWorkspace\UserCreated($createdUser, [
                 'source' => 'api',
                 'creator' => auth()->user()?->email ?? 'system'
             ]));
@@ -553,7 +553,7 @@ class GoogleWorkspaceService
             $this->monitor?->trackApiCall('deleteUser', $startTime, 'user_deleted');
             
             // Dispatch event
-            event(new \Bu\GwsEvents\GoogleWorkspace\UserDeleted($userKey, [
+            event(new \Bu\Gws\Events\GoogleWorkspace\UserDeleted($userKey, [
                 'source' => 'api',
                 'deleter' => auth()->user()?->email ?? 'system'
             ]));
