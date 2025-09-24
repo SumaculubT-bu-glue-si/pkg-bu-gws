@@ -34,10 +34,7 @@ class GoogleWorkspaceService
      */
     protected function createClient(): Client
     {
-        $client = new Client();
-
         try {
-            // Always resolve from config first, then env fallback
             $credentialsPath = config('services.google.credentials')
                 ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
 
@@ -52,42 +49,12 @@ class GoogleWorkspaceService
                 throw new \Exception('Google Workspace admin email not configured');
             }
 
-            // Only log configuration in debug mode and hide sensitive info
-            if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
-                \Log::debug('Google Workspace Configuration', [
-                    'credentials_path' => $credentialsPath,
-                    'admin_email_configured' => !empty($adminEmail),
-                    'environment' => app()->environment(),
-                ]);
+            if (!file_exists($credentialsPath) || !is_readable($credentialsPath)) {
+                throw new \Exception("Credentials file not found or unreadable at {$credentialsPath}");
             }
 
-            // Verify credential file exists and is readable
-            if (!file_exists($credentialsPath)) {
-                throw new \Exception("Credentials file not found at {$credentialsPath}");
-            }
-            if (!is_readable($credentialsPath)) {
-                throw new \Exception("Credentials file is not readable at {$credentialsPath}");
-            }
-
-            // Verify credential file content
-            $credentialContent = json_decode(file_get_contents($credentialsPath), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception("Invalid JSON in credentials file: " . json_last_error_msg());
-            }
-            if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
-                throw new \Exception("Credentials file missing required fields");
-            }
-
-            // Set up HTTP client
-            $client->setHttpClient(
-                new \GuzzleHttp\Client([
-                    'verify'  => false,
-                    'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
-                ])
-            );
-
-            // Configure Google client
-            $client->setAuthConfig($credentialContent);
+            $client = new Client();
+            $client->setAuthConfig($credentialsPath);
             $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
             $client->setScopes([
                 'https://www.googleapis.com/auth/admin.directory.user',
@@ -98,15 +65,16 @@ class GoogleWorkspaceService
             return $client;
         } catch (\Exception $e) {
             \Log::error('Google Workspace Client initialization failed', [
-                'error_type'        => get_class($e),
-                'message'           => $e->getMessage(),
-                'has_credentials'   => !empty($credentialsPath),
-                'has_admin_email'   => !empty($adminEmail ?? null),
-                'environment'       => app()->environment(),
+                'error_type'      => get_class($e),
+                'message'         => $e->getMessage(),
+                'credentialsPath' => $credentialsPath ?? null,
+                'adminEmail'      => $adminEmail ?? null,
             ]);
-            throw new \Exception('Failed to initialize Google Workspace Client');
+
+            throw new \Exception("Failed to initialize Google Workspace Client: {$e->getMessage()}", 0, $e);
         }
     }
+
 
     /**
      * Create a new Directory Service
