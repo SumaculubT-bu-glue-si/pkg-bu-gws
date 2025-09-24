@@ -87,7 +87,7 @@ class GoogleWorkspaceService
             );
 
             // Configure Google client
-            $client->setAuthConfig($credentialsPath);
+            $client->setAuthConfig($credentialContent);
             $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
             $client->setScopes([
                 'https://www.googleapis.com/auth/admin.directory.user',
