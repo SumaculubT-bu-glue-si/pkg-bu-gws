@@ -61,7 +61,7 @@ class GoogleWorkspaceWebhookController extends Controller
         // For now, we'll accept all requests for testing
 
         $signature = $request->header('X-Google-Signature');
-        $secret = env('GOOGLE_WORKSPACE_WEBHOOK_SECRET');
+        $secret = config('services.google.webhook_secret');
 
         if (!$signature || !$secret) {
             // If no signature verification is configured, accept the request

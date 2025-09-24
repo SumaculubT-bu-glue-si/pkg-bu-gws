@@ -35,15 +35,13 @@ class GoogleWorkspaceService
     protected function createClient(): Client
     {
         try {
-            $credentialsPath = config('services.google.credentials')
-                ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+            $credentialsPath = config('services.google.credentials_path');
 
             if (empty($credentialsPath)) {
                 throw new \Exception('Google Workspace credentials path not configured');
             }
 
-            $adminEmail = config('services.google.admin_email')
-                ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
+            $adminEmail = config('services.google.admin_email');
 
             if (empty($adminEmail)) {
                 throw new \Exception('Google Workspace admin email not configured');
@@ -55,7 +53,7 @@ class GoogleWorkspaceService
 
             $client = new Client();
             $client->setAuthConfig($credentialsPath);
-            $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
+            $client->setApplicationName(config('services.google.app_name'));
             $client->setScopes([
                 'https://www.googleapis.com/auth/admin.directory.user',
                 'https://www.googleapis.com/auth/calendar'
@@ -110,7 +108,7 @@ class GoogleWorkspaceService
     {
         try {
             // Only log in debug mode with minimal information
-            if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+            if (config('services.google.app_debug') && config('services.google.debug_logging')) {
                 \Log::info('Listing Google Workspace users', [
                     'domain_configured' => !empty($domain),
                     'options_count' => count($options),
@@ -439,7 +437,7 @@ class GoogleWorkspaceService
             $startTime = microtime(true);
             
             // Only log in debug mode without sensitive data
-            if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+            if (config('services.google.app_debug') && config('services.google.debug_logging')) {
                 \Log::debug('Creating Google Workspace user', [
                     'has_email' => !empty($userData['primaryEmail']),
                     'has_name' => !empty($userData['name']),

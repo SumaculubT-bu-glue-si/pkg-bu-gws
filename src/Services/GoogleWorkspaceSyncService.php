@@ -64,8 +64,8 @@ class GoogleWorkspaceSyncService
             } while ($nextPageToken);
 
             $this->syncStats['end_time'] = now();
-            
-            if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+
+            if (config('services.google.app_debug') && config('services.google.debug_logging')) {
                 Log::info('Google Workspace sync completed', $this->getSyncStats());
             }
 
@@ -131,7 +131,7 @@ class GoogleWorkspaceSyncService
                     $employee->update($employeeData);
                     $this->syncStats['updated']++;
                     
-                    if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+                    if (config('services.google.app_debug') && config('services.google.debug_logging')) {
                         Log::debug('Employee updated from GWS', [
                             'employee_id' => $employee->employee_id,
                             'has_changes' => true
@@ -147,7 +147,7 @@ class GoogleWorkspaceSyncService
                 $employee = Employee::create($employeeData);
                 $this->syncStats['created']++;
                 
-                if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
+                if (config('services.google.app_debug') && config('services.google.debug_logging')) {
                     Log::debug('Employee created from GWS', [
                         'employee_id' => $employee->employee_id,
                         'has_email' => !empty($employee->email)
