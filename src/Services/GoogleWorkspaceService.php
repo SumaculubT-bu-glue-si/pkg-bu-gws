@@ -115,6 +115,7 @@ class GoogleWorkspaceService
                 'has_credentials_path' => !empty($credentialsPath),
                 'has_admin_email' => !empty($adminEmail),
                 'environment' => app()->environment(),
+                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
             ]);
             throw new Exception('Failed to initialize Google Workspace Client');
         }
@@ -144,81 +145,58 @@ class GoogleWorkspaceService
     public function listUsers(string $domain, array $options = [])
     {
         try {
-            // Get credentials path from environment with fallback
-            $credentialsPath = config('services.google.credentials_path') ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
-            if (empty($credentialsPath)) {
-                throw new \Exception('Google Workspace credentials path not configured');
-            }
-
-            // Use absolute path directly if it starts with '/', otherwise use storage_path()
-            $fullCredentialsPath = strpos($credentialsPath, '/') === 0
-                ? $credentialsPath
-                : storage_path($credentialsPath);
-
-            $adminEmail = config('services.google.admin_email') ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
-            if (empty($adminEmail)) {
-                throw new \Exception('Google Workspace admin email not configured');
-            }
-
-            // Only log configuration in debug mode and hide sensitive info
+            // Only log in debug mode with minimal information
             if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
-                \Log::debug('Google Workspace Configuration', [
-                    'credentials_configured' => !empty($fullCredentialsPath),
-                    'admin_email_configured' => !empty($adminEmail),
-                    'environment' => app()->environment(),
+                \Log::info('Listing Google Workspace users', [
+                    'domain_configured' => !empty($domain),
+                    'options_count' => count($options),
+                    'max_results' => $options['maxResults'] ?? 100,
                 ]);
             }
 
-            // Verify credential file exists
-            if (!file_exists($fullCredentialsPath)) {
-                throw new \Exception("Credentials file not found at $fullCredentialsPath");
+            $optParams = array_merge([
+                'domain' => $domain,
+                'projection' => 'full',
+                'orderBy' => 'email',
+                'maxResults' => 100,
+            ], $options);
+
+            // Try to get from cache first
+            if ($this->cache) {
+                $cachedResult = $this->cache->getCachedUserList($domain, $optParams);
+                if ($cachedResult) {
+                    $this->monitor?->trackCacheEvent('list_users', $domain, true);
+                    return $cachedResult;
+                }
+                $this->monitor?->trackCacheEvent('list_users', $domain, false);
             }
 
-            // Verify credential file is readable
-            if (!is_readable($fullCredentialsPath)) {
-                throw new \Exception("Credentials file is not readable at $fullCredentialsPath");
+            // Track API call start time
+            $startTime = microtime(true);
+            
+            try {
+                $results = $this->directory->users->listUsers($optParams);
+                
+                // Track successful API call
+                $this->monitor?->trackApiCall('listUsers', $startTime, $domain);
+
+                $response = [
+                    'users' => $results->getUsers(),
+                    'nextPageToken' => $results->nextPageToken,
+                    'totalItems' => count($results->getUsers())
+                ];
+
+                // Cache the results
+                if ($this->cache) {
+                    $this->cache->cacheUserList($domain, $optParams, $response);
+                }
+
+                return $response;
+            } catch (Exception $e) {
+                // Track failed API call before throwing
+                $this->monitor?->trackApiCall('listUsers', $startTime, $domain);
+                throw $e;
             }
-
-            // Verify credential file content
-            $credentialContent = json_decode(file_get_contents($fullCredentialsPath), true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception("Invalid JSON in credentials file: " . json_last_error_msg());
-            }
-
-            // Verify required fields in credentials
-            if (empty($credentialContent['client_email']) || empty($credentialContent['private_key'])) {
-                throw new \Exception("Credentials file missing required fields");
-            }
-
-            // Set up HTTP client with SSL verification options
-            $client->setHttpClient(
-                new \GuzzleHttp\Client([
-                    'verify' => false,
-                    'timeout' => env('GOOGLE_WORKSPACE_TIMEOUT', 60),
-                ])
-            );
-
-            // Only log authentication info in debug mode with minimal data
-            if (env('APP_DEBUG', true) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', true)) {
-                \Log::info('Google Workspace authentication initiated', [
-                    'service_account_configured' => !empty($credentialContent['client_email']),
-                    'admin_impersonation_configured' => !empty($adminEmail),
-                    'scopes_count' => 1,
-                    'environment' => app()->environment(),
-                ]);
-            }
-
-            // Set up authentication
-            $client->setAuthConfig($fullCredentialsPath);
-
-            // Configure service account
-            $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
-            $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user','https://www.googleapis.com/auth/calendar' ]);
-
-            // Set admin account to impersonate
-            $client->setSubject($adminEmail);
-
-            return $client;
         } catch (Exception $e) {
             // Log error without sensitive information
             $errorDetails = [
@@ -230,7 +208,7 @@ class GoogleWorkspaceService
                 'error_code' => $e->getCode(),
                 'error_trace' => $e->getTraceAsString(),
                 'environment' => app()->environment(),
-                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'), // Add this line
+                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
             ];
             // If Google API exception, try to log errors array
             if (method_exists($e, 'getErrors')) {
