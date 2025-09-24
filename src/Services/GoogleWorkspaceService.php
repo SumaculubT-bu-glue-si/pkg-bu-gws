@@ -221,13 +221,17 @@ class GoogleWorkspaceService
             return $client;
         } catch (Exception $e) {
             // Log error without sensitive information
-            \Log::error('Google Workspace Client initialization failed', [
+            $errorDetails = [
+                'operation' => 'listUsers',
+                'has_domain' => !empty($domain),
+                'options_provided' => !empty($options),
                 'error_type' => get_class($e),
-                'has_credentials_path' => !empty($credentialsPath),
-                'has_admin_email' => !empty($adminEmail),
-            ]);
-            throw new Exception('Failed to initialize Google Workspace Client');
-                
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_trace' => $e->getTraceAsString(),
+                'environment' => app()->environment(),
+                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'), // Add this line
+            ];
             // If Google API exception, try to log errors array
             if (method_exists($e, 'getErrors')) {
                 $errorDetails['google_errors'] = $e->getErrors();
