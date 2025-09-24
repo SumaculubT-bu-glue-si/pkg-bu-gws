@@ -38,13 +38,16 @@ class GoogleWorkspaceService
 
         try {
             // Get credentials path from environment with fallback
-            $credentialsPath = env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
+            $credentialsPath = config('services.google.credentials_path') ?? 
+                              env('GOOGLE_WORKSPACE_CREDENTIALS_PATH');
             
             if (empty($credentialsPath)) {
                 throw new \Exception('Google Workspace credentials path not configured');
             }
-            $adminEmail = env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
-
+            
+            $adminEmail = config('services.google.admin_email') ?? 
+                         env('GOOGLE_WORKSPACE_ADMIN_EMAIL');
+                         
             if (empty($adminEmail)) {
                 throw new \Exception('Google Workspace admin email not configured');
             }
@@ -115,14 +118,13 @@ class GoogleWorkspaceService
                 'has_credentials_path' => !empty($credentialsPath),
                 'has_admin_email' => !empty($adminEmail),
                 'environment' => app()->environment(),
-                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
             ]);
             throw new Exception('Failed to initialize Google Workspace Client');
         }
     }
 
     /**
-     *      * Create a new Directory Service
+     * Create a new Directory Service
      * 
      * @return Directory
      */
@@ -198,27 +200,19 @@ class GoogleWorkspaceService
                 throw $e;
             }
         } catch (Exception $e) {
-            // Log error without sensitive information
+            // Enhanced error logging without sensitive data
             $errorDetails = [
                 'operation' => 'listUsers',
                 'has_domain' => !empty($domain),
                 'options_provided' => !empty($options),
                 'error_type' => get_class($e),
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'error_trace' => $e->getTraceAsString(),
                 'environment' => app()->environment(),
-                'credentials_path' => env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'),
             ];
-            // If Google API exception, try to log errors array
-            if (method_exists($e, 'getErrors')) {
-                $errorDetails['google_errors'] = $e->getErrors();
-            }
-
+            
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
-
-            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
+            
+            throw new Exception('Failed to list users from Google Workspace');
         }
     }
 
