@@ -84,9 +84,18 @@ class GoogleWorkspaceService
     protected function createDirectoryService(): Directory
     {
         try {
+            if (!$this->client) {
+                throw new \Exception('Google Client not initialized before creating Directory Service');
+            }
+
             return new Directory($this->client);
-        } catch (Exception $e) {
-            throw new Exception('Failed to initialize Directory Service');
+        } catch (\Exception $e) {
+            \Log::error('Google Workspace Directory Service initialization failed', [
+                'error_type' => get_class($e),
+                'message'    => $e->getMessage(),
+            ]);
+
+            throw new \Exception("Failed to initialize Directory Service: {$e->getMessage()}", 0, $e);
         }
     }
 
