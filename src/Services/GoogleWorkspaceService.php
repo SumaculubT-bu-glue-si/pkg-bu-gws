@@ -42,6 +42,7 @@ class GoogleWorkspaceService
             }
 
             $adminEmail = config('services.google.admin_email');
+            echo "Admin Email: {$adminEmail}\n";
 
             if (empty($adminEmail)) {
                 throw new \Exception('Google Workspace admin email not configured');
