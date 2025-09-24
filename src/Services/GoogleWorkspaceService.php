@@ -210,7 +210,7 @@ class GoogleWorkspaceService
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
             
-            throw new Exception('Failed to list users from Google Workspace');
+            throw $e;
         }
     }
 
