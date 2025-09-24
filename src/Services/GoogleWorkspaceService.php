@@ -218,7 +218,7 @@ class GoogleWorkspaceService
             \Log::error('Google Workspace operation failed', $errorDetails);
             $this->monitor?->logError('listUsers', $e, $errorDetails);
 
-            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), $e->getCode(), $e, env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'));
+            throw new Exception('Failed to list users from Google Workspace: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
