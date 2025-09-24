@@ -60,8 +60,8 @@ class GoogleWorkspaceService
             }
 
             // Verify credential file exists
-            if (!file_exists(storage_path($credentialsPath))) {
-                throw new \Exception("Credentials file not found");
+            if (!file_exists($credentialsPath)) {
+                throw new \Exception("Credentials file not found at " . $credentialsPath);
             }
 
             // Verify credential file is readable
