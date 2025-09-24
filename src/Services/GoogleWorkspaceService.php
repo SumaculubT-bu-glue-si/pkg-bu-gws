@@ -34,7 +34,7 @@ class GoogleWorkspaceService
      */
     protected function createClient(): Client
     {
-        $client = new Google\Client();
+        $client = new Client();
 
         try {
             // Always resolve from config first, then env fallback
