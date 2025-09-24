@@ -43,6 +43,7 @@ class GwsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Bu\Gws\Console\Commands\SyncGoogleWorkspaceUsers::class,
+                \Bu\Gws\Console\Commands\TestGoogleWorkspaceAuth::class,
             ]);
         }
     }
