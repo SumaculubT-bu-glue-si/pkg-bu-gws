@@ -99,14 +99,14 @@ class GoogleWorkspaceService
             }
 
             // Set up authentication
-            $client->setAuthConfig(env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'));
+            $client->setAuthConfig(config('services.google.credentials_path') ?? env('GOOGLE_WORKSPACE_CREDENTIALS_PATH'));
             
             // Configure service account
             $client->setApplicationName(env('GOOGLE_WORKSPACE_APP_NAME', 'AssetWise'));
             $client->setScopes(['https://www.googleapis.com/auth/admin.directory.user','https://www.googleapis.com/auth/calendar' ]);
             
             // Set admin account to impersonate
-            $client->setSubject(env('GOOGLE_WORKSPACE_ADMIN_EMAIL'));
+            $client->setSubject(config('services.google.admin_email') ?? env('GOOGLE_WORKSPACE_ADMIN_EMAIL'));
 
             return $client;
         } catch (Exception $e) {

@@ -39,7 +39,7 @@ class GoogleWorkspaceSyncService
         try {
             $allUsers = [];
             $nextPageToken = null;
-
+            
             do {
                 $params = [
                     'maxResults' => $options['batch_size'] ?? 100,
@@ -60,21 +60,20 @@ class GoogleWorkspaceSyncService
                 if ($nextPageToken && !empty($options['delay_between_batches'])) {
                     sleep($options['delay_between_batches']);
                 }
+
             } while ($nextPageToken);
 
             $this->syncStats['end_time'] = now();
-
+            
             if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
                 Log::info('Google Workspace sync completed', $this->getSyncStats());
             }
 
             return $this->getSyncStats();
+
         } catch (Exception $e) {
             Log::error('Google Workspace sync failed', [
-                'error_message' => $e->getMessage(),
-                'error_class' => get_class($e),
-                'error_code' => $e->getCode(),
-                'error_trace' => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
                 'domain' => $domain,
                 'stats' => $this->getSyncStats()
             ]);
@@ -95,7 +94,7 @@ class GoogleWorkspaceSyncService
 
             $email = $gwsUser->getPrimaryEmail();
             $name = $gwsUser->getName();
-
+            
             // Skip if no email
             if (empty($email)) {
                 $this->syncStats['skipped']++;
@@ -127,11 +126,11 @@ class GoogleWorkspaceSyncService
             if ($employee) {
                 // Update existing employee
                 $hasChanges = $this->hasChanges($employee, $employeeData);
-
+                
                 if ($hasChanges) {
                     $employee->update($employeeData);
                     $this->syncStats['updated']++;
-
+                    
                     if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
                         Log::debug('Employee updated from GWS', [
                             'employee_id' => $employee->employee_id,
@@ -141,29 +140,27 @@ class GoogleWorkspaceSyncService
                 } else {
                     $this->syncStats['skipped']++;
                 }
-
+                
                 return $employee;
             } else {
                 // Create new employee
                 $employee = Employee::create($employeeData);
                 $this->syncStats['created']++;
-
+                
                 if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
                     Log::debug('Employee created from GWS', [
                         'employee_id' => $employee->employee_id,
                         'has_email' => !empty($employee->email)
                     ]);
                 }
-
+                
                 return $employee;
             }
+
         } catch (Exception $e) {
             $this->syncStats['errors']++;
             Log::error('Failed to sync user from GWS', [
-                'error_message' => $e->getMessage(),
-                'error_class' => get_class($e),
-                'error_code' => $e->getCode(),
-                'error_trace' => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
                 'user_email' => $gwsUser->getPrimaryEmail() ?? 'unknown'
             ]);
             return null;
@@ -180,25 +177,17 @@ class GoogleWorkspaceSyncService
     public function syncUsersByEmails(array $emails, string $domain): array
     {
         $results = [];
-
+        
         foreach ($emails as $email) {
             try {
                 $user = $this->googleWorkspaceService->getUser($email);
                 $employee = $this->syncUser($user);
                 $results[$email] = $employee ? 'Success' : 'Failed';
             } catch (Exception $e) {
-                Log::error('Failed to sync user by email', [
-                    'error_message' => $e->getMessage(),
-                    'error_class' => get_class($e),
-                    'error_code' => $e->getCode(),
-                    'error_trace' => $e->getTraceAsString(),
-                    'user_email' => $email,
-                    'domain' => $domain
-                ]);
                 $results[$email] = 'Error: ' . $e->getMessage();
             }
         }
-
+        
         return $results;
     }
 
@@ -220,12 +209,10 @@ class GoogleWorkspaceSyncService
             }
 
             return $this->getSyncStats();
+
         } catch (Exception $e) {
             Log::error('Failed to sync recently modified users', [
-                'error_message' => $e->getMessage(),
-                'error_class' => get_class($e),
-                'error_code' => $e->getCode(),
-                'error_trace' => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
                 'domain' => $domain,
                 'since' => $since
             ]);
@@ -239,10 +226,10 @@ class GoogleWorkspaceSyncService
     protected function formatUserName($nameObj): string
     {
         if (!$nameObj) return 'Unknown User';
-
+        
         $givenName = $nameObj->getGivenName() ?? '';
         $familyName = $nameObj->getFamilyName() ?? '';
-
+        
         return trim($givenName . ' ' . $familyName) ?: 'Unknown User';
     }
 
@@ -253,7 +240,7 @@ class GoogleWorkspaceSyncService
     {
         // You can customize this based on how you store location in GWS
         $orgUnitPath = $gwsUser->getOrgUnitPath();
-
+        
         // Map org units to locations
         $locationMap = [
             '/一般' => 'General Office',
@@ -281,13 +268,13 @@ class GoogleWorkspaceSyncService
     protected function hasChanges(Employee $employee, array $newData): bool
     {
         $fields = ['name', 'email', 'location', 'employee_id'];
-
+        
         foreach ($fields as $field) {
             if ($employee->$field !== $newData[$field]) {
                 return true;
             }
         }
-
+        
         return false;
     }
 
@@ -299,3 +286,4 @@ class GoogleWorkspaceSyncService
         return $this->syncStats;
     }
 }
+
