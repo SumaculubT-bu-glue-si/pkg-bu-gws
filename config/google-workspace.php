@@ -13,21 +13,18 @@ return [
     ],
 
     'cache' => [
-        'driver' => 'redis',
-        'prefix' => 'gws_',
+        'enabled' => env('GOOGLE_WORKSPACE_CACHE_ENABLED', true),
+        'prefix' => env('GOOGLE_WORKSPACE_CACHE_PREFIX', 'gws:'),
         'ttl' => [
-            'user' => 3600,        // 1 hour for user data
-            'org_unit' => 86400,   // 24 hours for org units
-            'default' => 1800      // 30 minutes default
-        ]
+            'user' => env('GOOGLE_WORKSPACE_CACHE_USER_TTL', 3600), // 1 hour
+            'default' => env('GOOGLE_WORKSPACE_CACHE_DEFAULT_TTL', 1800), // 30 minutes
+        ],
     ],
 
     'monitoring' => [
-        'enabled' => true,
-        'rate_limit_threshold' => 80,  // Alert at 80% of rate limit
-        'log_slow_requests' => true,
-        'slow_request_threshold' => 2000, // ms
-        'alert_channels' => ['slack', 'email'],
+        'enabled' => env('GOOGLE_WORKSPACE_MONITORING_ENABLED', true),
+        'slow_request_threshold' => env('GOOGLE_WORKSPACE_SLOW_REQUEST_THRESHOLD', 5000),
+        'rate_limit_threshold' => env('GOOGLE_WORKSPACE_RATE_LIMIT_THRESHOLD', 80),
     ],
 
     'sync' => [

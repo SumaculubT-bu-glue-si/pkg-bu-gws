@@ -9,6 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProvisionGoogleWorkspaceUser implements ShouldQueue
 {
@@ -37,13 +39,13 @@ class ProvisionGoogleWorkspaceUser implements ShouldQueue
                 'givenName' => $givenName,
                 'familyName' => $familyName,
             ],
-            'password' => env('GWS_DEFAULT_PASSWORD', \Str::random(16)),
+            'password' => env('GWS_DEFAULT_PASSWORD', Str::random(16)),
             'orgUnitPath' => $this->employee->org_unit_path ?? env('GWS_DEFAULT_ORG_UNIT', '/テスト'),
         ];
 
         // Only log in debug mode without sensitive data
         if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
-            \Log::debug('Provisioning Google Workspace user', [
+            Log::debug('Provisioning Google Workspace user', [
                 'employee_id' => $this->employee->employee_id,
                 'has_email' => !empty($this->employee->email),
                 'has_name' => !empty($this->employee->name),
@@ -61,7 +63,7 @@ class ProvisionGoogleWorkspaceUser implements ShouldQueue
 
         // Log the successful creation
         if (env('APP_DEBUG', false) && env('GOOGLE_WORKSPACE_DEBUG_LOGGING', false)) {
-            \Log::debug('Google Workspace user created and employee ID updated', [
+            Log::debug('Google Workspace user created and employee ID updated', [
                 'gws_user_id' => $gwsUser->getId(),
                 'employee_database_id' => $this->employee->id,
             ]);

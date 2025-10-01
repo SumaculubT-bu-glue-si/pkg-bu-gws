@@ -8,7 +8,7 @@ use Bu\Server\Models\Employee;
 use Bu\Server\Models\Asset;
 use Bu\Server\Models\AuditAsset;
 
-use Bu\Gws\Jobs\CreateAuditCalendarEvents;
+use Bu\Gws\Jobs\CreateAuditNotifications;
 use Illuminate\Console\Command;
 
 class TestAuditCalendar extends Command
@@ -58,7 +58,7 @@ class TestAuditCalendar extends Command
         $this->createTestAuditAssets($auditPlan, $location, $employees);
 
         // Dispatch job
-        CreateAuditCalendarEvents::dispatch($auditPlan, $location);
+        CreateAuditNotifications::dispatch($auditPlan, $location);
 
 
         $this->info("Calendar events creation job dispatched!");

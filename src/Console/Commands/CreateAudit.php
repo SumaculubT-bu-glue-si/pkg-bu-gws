@@ -3,7 +3,7 @@
 namespace Bu\Gws\Console\Commands;
 
 use Bu\Server\Models\AuditPlan;
-use Bu\Gws\Jobs\CreateAuditCalendarEvents;
+use Bu\Gws\Jobs\CreateAuditNotifications;
 use Illuminate\Console\Command;
 
 class CreateAudit extends Command
@@ -38,7 +38,7 @@ class CreateAudit extends Command
         $this->info("Audit created with ID: {$audit->id}");
 
         // Dispatch job to create calendar events
-        CreateAuditCalendarEvents::dispatch($audit, $location);
+        CreateAuditNotifications::dispatch($audit, $location);
 
         $this->info('Calendar events creation job dispatched');
     }
