@@ -236,6 +236,55 @@ type Query {
 
   "Find a single corrective action by ID."
   correctiveAction(id: ID! @eq): CorrectiveAction @find
+
+  # Employee Audit queries
+  "Get available audit plans for employee selection."
+  availableAuditPlans: [AvailableAuditPlan!]!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getAvailableAuditPlans"
+    )
+
+  "Get employee audit access data using access token."
+  employeeAuditAccess(
+    token: String! @rules(apply: ["required"])
+  ): EmployeeAuditAccessData!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getEmployeeAuditAccess"
+    )
+
+  "Get corrective actions for an employee in an audit plan."
+  employeeCorrectiveActions(
+    employee_id: ID! @rules(apply: ["required"])
+    audit_plan_id: ID! @rules(apply: ["required"])
+  ): CorrectiveActionsResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getCorrectiveActions"
+    )
+
+  "Get audit assets for a specific audit plan using access token."
+  auditPlanAssets(
+    token: String! @rules(apply: ["required"])
+    planId: ID! @rules(apply: ["required"])
+  ): AuditPlanAssetsResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getAuditPlanAssets"
+    )
+
+  "Get audit history for an employee using access token."
+  auditHistory(
+    token: String! @rules(apply: ["required"])
+  ): AuditHistoryResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getAuditHistory"
+    )
+
+  "Get detailed information about a specific audit asset."
+  auditAssetDetails(
+    auditAssetId: ID! @rules(apply: ["required"])
+  ): AuditAssetDetailsResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Queries\\EmployeeAuditQueries@getAuditAssetDetails"
+    )
 }
 
 "Account of a person who uses this application."
@@ -840,6 +889,660 @@ type CorrectiveActionAssignment {
   assignedToEmployee: Employee @belongsTo
 }
 
+"Available audit plan for employee selection with progress information."
+type AvailableAuditPlan {
+  "Unique primary key."
+  id: ID!
+
+  "Name of the audit plan."
+  name: String!
+
+  "Start date of the audit."
+  start_date: Date!
+
+  "Due date for completing the audit."
+  due_date: Date!
+
+  "Current status of the audit plan."
+  status: String!
+
+  "Progress information for this audit plan."
+  progress: AuditPlanProgress!
+}
+
+"Progress information for an audit plan."
+type AuditPlanProgress {
+  "Total number of assets in the audit plan."
+  total_assets: Int!
+
+  "Number of assets that have been audited."
+  audited_assets: Int!
+
+  "Progress percentage (0-100)."
+  percentage: Int!
+}
+
+"Response for audit access request."
+type AuditAccessResponse {
+  "Whether the request was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Whether the email was sent successfully."
+  email_sent: Boolean
+
+  "Access URL (fallback if email fails)."
+  accessUrl: String
+
+  "Token expiration time."
+  expiresAt: String
+}
+
+"Employee audit access data response."
+type EmployeeAuditAccessData {
+  "Whether the access was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Employee information."
+  employee: EmployeeInfo
+
+  "Selected audit plan data."
+  selectedPlan: AuditPlanData
+
+  "Audit assets for the employee."
+  auditAssets: [AuditAssetData!]!
+
+  "Employee role and permissions."
+  role: EmployeeRole!
+}
+
+"Employee information for audit access."
+type EmployeeInfo {
+  "Unique primary key."
+  id: ID!
+
+  "Employee name."
+  name: String!
+
+  "Employee email."
+  email: String!
+}
+
+"Audit plan data for access."
+type AuditPlanData {
+  "Unique primary key."
+  id: ID!
+
+  "Name of the audit plan."
+  name: String!
+
+  "Start date of the audit."
+  start_date: Date!
+
+  "Due date for completing the audit."
+  due_date: Date!
+
+  "Progress percentage (0-100)."
+  progress: Int!
+
+  "Total number of assets in the audit plan."
+  total_assets: Int!
+
+  "Number of completed assets."
+  completed_assets: Int!
+}
+
+"Audit asset data for employee access."
+type AuditAssetData {
+  "Unique primary key."
+  id: ID!
+
+  "Asset ID."
+  asset_id: ID!
+
+  "Asset type."
+  asset_type: String!
+
+  "Asset model."
+  model: String!
+
+  "Original user assigned to the asset."
+  original_user: String!
+
+  "Original location of the asset."
+  original_location: String!
+
+  "Current user assigned to the asset."
+  current_user: String!
+
+  "Current location of the asset."
+  current_location: String!
+
+  "Current status of the asset."
+  status: String!
+
+  "Whether the asset has been audited."
+  audit_status: Boolean!
+
+  "Auditor notes for the asset."
+  notes: String
+
+  "When the asset was audited."
+  audited_at: DateTime
+
+  "Whether the asset has been resolved."
+  resolved: Boolean!
+}
+
+"Employee role and permissions for audit access."
+type EmployeeRole {
+  "Whether the employee is an auditor."
+  isAuditor: Boolean!
+
+  "Assigned location for auditors."
+  assignedLocation: String
+
+  "Whether the employee can audit all assets."
+  canAuditAllAssets: Boolean!
+
+  "Description of the employee's role."
+  description: String!
+}
+
+"Response for corrective actions query."
+type CorrectiveActionsResponse {
+  "Whether the request was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "List of corrective actions."
+  actions: [CorrectiveActionData!]!
+
+  "Employee role information."
+  role: CorrectiveActionRole!
+}
+
+"Corrective action data for employee access."
+type CorrectiveActionData {
+  "Unique primary key."
+  id: ID!
+
+  "Audit asset ID this action relates to."
+  audit_asset_id: ID!
+
+  "Description of the issue."
+  issue: String!
+
+  "Action to be taken."
+  action: String!
+
+  "Employee assigned to complete this action."
+  assigned_to: ID!
+
+  "Priority level of the action."
+  priority: String!
+
+  "Current status of the action."
+  status: String!
+
+  "Due date for completion."
+  due_date: Date
+
+  "Date when the action was completed."
+  completed_date: Date
+
+  "Additional notes."
+  notes: String
+
+  "When the action was created."
+  created_at: DateTime!
+
+  "When the action was last updated."
+  updated_at: DateTime!
+
+  "Asset information for this corrective action."
+  asset: CorrectiveActionAsset!
+}
+
+"Asset information for corrective actions."
+type CorrectiveActionAsset {
+  "Asset ID."
+  asset_id: String!
+
+  "Asset model."
+  model: String!
+
+  "Asset location."
+  location: String!
+}
+
+"Employee role information for corrective actions."
+type CorrectiveActionRole {
+  "Whether the employee is an auditor."
+  isAuditor: Boolean!
+
+  "Assigned location for auditors."
+  assignedLocation: String
+
+  "Whether the employee can see all actions."
+  canSeeAllActions: Boolean!
+
+  "Description of the employee's role."
+  description: String!
+}
+
+"Response for updating corrective action status."
+type CorrectiveActionStatusResponse {
+  "Whether the update was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Updated corrective action data."
+  action: CorrectiveActionData
+}
+
+"Response for updating asset status."
+type AssetStatusResponse {
+  "Whether the update was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Updated asset data."
+  asset: AssetUpdateData
+
+  "Whether the main asset was updated."
+  main_asset_updated: Boolean!
+
+  "User assignment information."
+  user_assignment: UserAssignmentData
+
+  "Changes detected in the asset."
+  changes_detected: AssetChangesData!
+}
+
+"Asset update data for status updates."
+type AssetUpdateData {
+  "Audit asset ID."
+  id: ID!
+
+  "Whether the asset has been audited."
+  audit_status: Boolean!
+
+  "Current status of the asset."
+  current_status: String!
+
+  "Auditor notes."
+  notes: String
+
+  "When the asset was audited."
+  audited_at: DateTime
+
+  "Who audited the asset."
+  audited_by: String
+
+  "Whether the location has changed."
+  location_changed: Boolean!
+
+  "Whether the user has changed."
+  user_changed: Boolean!
+
+  "Whether a user was assigned."
+  user_assigned: Boolean!
+}
+
+"User assignment data for asset updates."
+type UserAssignmentData {
+  "Previous user ID."
+  old_user_id: ID
+
+  "New user ID."
+  new_user_id: ID
+
+  "New user name."
+  new_user_name: String
+}
+
+"Asset changes data for tracking modifications."
+type AssetChangesData {
+  "Whether the location changed."
+  location: Boolean!
+
+  "Whether the user changed."
+  user: Boolean!
+}
+
+"Response for audit plan assets query."
+type AuditPlanAssetsResponse {
+  "Whether the request was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Audit plan information."
+  auditPlan: AuditPlanInfo
+
+  "List of audit assets."
+  auditAssets: [AuditAssetInfo!]!
+
+  "Progress information for the audit plan."
+  progress: AuditProgressInfo!
+}
+
+"Audit plan information for assets query."
+type AuditPlanInfo {
+  "Unique primary key."
+  id: ID!
+
+  "Name of the audit plan."
+  name: String!
+
+  "Start date of the audit."
+  start_date: Date!
+
+  "Due date for completing the audit."
+  due_date: Date!
+
+  "Current status of the audit plan."
+  status: String!
+}
+
+"Audit asset information for plan assets query."
+type AuditAssetInfo {
+  "Unique primary key."
+  id: ID!
+
+  "Asset ID."
+  asset_id: ID!
+
+  "Asset type."
+  asset_type: String!
+
+  "Asset model."
+  model: String!
+
+  "Original user assigned to the asset."
+  original_user: String!
+
+  "Original location of the asset."
+  original_location: String!
+
+  "Current user assigned to the asset."
+  current_user: String!
+
+  "Current location of the asset."
+  current_location: String!
+
+  "Current status of the asset."
+  status: String!
+
+  "Whether the asset has been audited."
+  audit_status: Boolean!
+
+  "Auditor notes for the asset."
+  notes: String
+
+  "When the asset was audited."
+  audited_at: DateTime
+
+  "Whether the asset has been resolved."
+  resolved: Boolean!
+}
+
+"Audit progress information for plan assets query."
+type AuditProgressInfo {
+  "Total number of assets in the audit plan."
+  total_assets: Int!
+
+  "Number of assets that have been audited."
+  audited_assets: Int!
+
+  "Progress percentage (0-100)."
+  percentage: Int!
+}
+
+"Response for audit history query."
+type AuditHistoryResponse {
+  "Whether the request was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "List of audited assets in chronological order."
+  auditHistory: [AuditHistoryItem!]!
+}
+
+"Audit history item for tracking completed audits."
+type AuditHistoryItem {
+  "Unique primary key."
+  id: ID!
+
+  "Asset type."
+  asset_type: String!
+
+  "Asset model."
+  model: String!
+
+  "Current status of the asset."
+  status: String!
+
+  "Auditor notes for the asset."
+  notes: String
+
+  "When the asset was audited."
+  audited_at: DateTime!
+
+  "Name of the audit plan this asset belonged to."
+  audit_plan_name: String!
+
+  "Current location of the asset."
+  location: String!
+
+  "Current user of the asset."
+  user: String!
+}
+
+"Response for audit asset details query."
+type AuditAssetDetailsResponse {
+  "Whether the request was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Detailed audit asset information."
+  audit_asset: AuditAssetDetails
+}
+
+"Detailed audit asset information."
+type AuditAssetDetails {
+  "Unique primary key."
+  id: ID!
+
+  "Asset ID."
+  asset_id: ID!
+
+  "Asset type."
+  asset_type: String!
+
+  "Asset model."
+  model: String!
+
+  "Original location of the asset."
+  original_location: String
+
+  "Original user of the asset."
+  original_user: String
+
+  "Current status of the asset."
+  current_status: String
+
+  "Current location of the asset."
+  current_location: String
+
+  "Current user of the asset."
+  current_user: String
+
+  "Auditor notes for the asset."
+  auditor_notes: String
+
+  "When the asset was audited."
+  audited_at: DateTime
+
+  "Whether the asset has been resolved."
+  resolved: Boolean!
+
+  "Whether the asset has been audited."
+  audit_status: Boolean!
+
+  "Audit summary information."
+  audit_summary: AuditSummary
+
+  "Status transition history."
+  status_history: [StatusHistoryItem!]!
+
+  "Corrective actions for this asset."
+  corrective_actions: [CorrectiveActionDetails!]!
+}
+
+"Audit summary information."
+type AuditSummary {
+  "Summary text of the audit."
+  summary: String
+
+  "Key findings from the audit."
+  findings: [String!]!
+
+  "Recommendations from the audit."
+  recommendations: [String!]!
+}
+
+"Status history item for tracking changes."
+type StatusHistoryItem {
+  "Previous status."
+  from_status: String
+
+  "New status."
+  to_status: String!
+
+  "When the status changed."
+  changed_at: DateTime!
+
+  "Who changed the status."
+  changed_by: String
+
+  "Reason for the change."
+  reason: String
+}
+
+"Corrective action details."
+type CorrectiveActionDetails {
+  "Unique primary key."
+  id: ID!
+
+  "Issue description."
+  issue: String!
+
+  "Action to be taken."
+  action: String!
+
+  "Priority level."
+  priority: String!
+
+  "Current status."
+  status: String!
+
+  "Due date for completion."
+  due_date: Date
+
+  "When it was completed."
+  completed_date: Date
+
+  "Additional notes."
+  notes: String
+
+  "Who it's assigned to."
+  assigned_to: String
+}
+
+"Response for sending scheduled reminders."
+type ScheduledRemindersResponse {
+  "Whether the operation was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Number of reminders sent."
+  reminders_sent: Int!
+
+  "Number of corrective actions processed."
+  actions_processed: Int!
+
+  "Details about the reminder process."
+  details: ReminderDetails
+}
+
+"Details about the reminder process."
+type ReminderDetails {
+  "Number of pending actions that received reminders."
+  pending_reminders: Int!
+
+  "Number of in-progress actions that received reminders."
+  in_progress_reminders: Int!
+
+  "Number of overdue actions that received reminders."
+  overdue_reminders: Int!
+
+  "List of employees who received reminders."
+  employees_notified: [String!]!
+
+  "Any errors that occurred during the process."
+  errors: [String!]!
+}
+
+"Response for sending manual reminders."
+type ManualRemindersResponse {
+  "Whether the operation was successful."
+  success: Boolean!
+
+  "Response message."
+  message: String!
+
+  "Number of reminders sent."
+  reminders_sent: Int!
+
+  "Number of actions processed."
+  actions_processed: Int!
+
+  "Details about the reminder process."
+  details: ManualReminderDetails
+}
+
+"Details about manual reminder process."
+type ManualReminderDetails {
+  "List of employees who received reminders."
+  employees_notified: [String!]!
+
+  "List of action IDs that were processed."
+  actions_processed: [ID!]!
+
+  "Any errors that occurred during the process."
+  errors: [String!]!
+}
+
 "Input for creating or updating a corrective action."
 input CorrectiveActionInput {
   "Audit asset ID this action relates to."
@@ -1074,5 +1777,59 @@ type Mutation {
   ): CorrectiveActionAssignment!
     @field(
       resolver: "Bu\\Server\\GraphQL\\Mutations\\CorrectiveActionAssignmentMutations@updateStatus"
+    )
+
+  "Update the status of a corrective action for an employee."
+  updateEmployeeCorrectiveActionStatus(
+    action_id: ID! @rules(apply: ["required", "integer"])
+    status: String!
+      @rules(apply: ["required", "in:pending,in_progress,completed"])
+    notes: String
+    employee_id: ID! @rules(apply: ["required", "integer"])
+  ): CorrectiveActionStatusResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Mutations\\EmployeeAuditMutations@updateCorrectiveActionStatus"
+    )
+
+  "Update asset status for an employee using access token."
+  updateAssetStatus(
+    token: String! @rules(apply: ["required"])
+    assetId: ID! @rules(apply: ["required"])
+    status: String!
+      @rules(
+        apply: [
+          "required"
+          "in:欠落,返却済,廃止,保管(使用無),利用中,保管中,貸出中,故障中,利用予約,Missing,Returned,Abolished,Stored - Not in Use,In Use,In Storage,On Loan,Broken,Reserved for Use"
+        ]
+      )
+    notes: String
+    reassignUserId: ID
+  ): AssetStatusResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Mutations\\EmployeeAuditMutations@updateAssetStatus"
+    )
+
+  "Send scheduled reminders for pending and in-progress corrective actions."
+  sendScheduledReminders: ScheduledRemindersResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Mutations\\EmployeeAuditMutations@sendScheduledReminders"
+    )
+
+  "Send manual reminders for specific corrective actions."
+  sendManualReminders(
+    actionIds: [ID!]! @rules(apply: ["required"])
+  ): ManualRemindersResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Mutations\\EmployeeAuditMutations@sendManualReminders"
+    )
+
+  # Employee Audit mutations
+  "Request access to an audit plan for an employee."
+  requestAuditAccess(
+    email: String! @rules(apply: ["required", "email"])
+    audit_plan_id: String! @rules(apply: ["required", "string"])
+  ): AuditAccessResponse!
+    @field(
+      resolver: "Bu\\Server\\GraphQL\\Mutations\\EmployeeAuditMutations@requestAccess"
     )
 }
