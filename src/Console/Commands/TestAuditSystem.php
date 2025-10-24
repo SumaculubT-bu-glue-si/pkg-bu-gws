@@ -9,7 +9,7 @@ use Bu\Server\Models\AuditAsset;
 use Bu\Server\Models\Asset;
 use Bu\Server\Models\Location;
 use Bu\Server\Models\Employee;
-use Bu\Server\Models\User;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
